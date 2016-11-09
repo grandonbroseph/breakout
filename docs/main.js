@@ -31,6 +31,7 @@ var Display = (function() {
   }
   function getDrawBox(child) {
     var unit = child.parent.rect.width / scale;
+    var ctx = child.parent.context;
     var x, y, w, h;
 
     x = child.pos [0] * unit;
@@ -39,11 +40,12 @@ var Display = (function() {
       w = child.size[0] * unit;
       h = child.size[1] * unit;
     } else if (child.type === 'text') {
+      ctx.font = unit * 2 + 'px VT323, Roboto, sans-serif';
       w = ctx.measureText(child.content).width;
       h = unit * 2;
     }
 
-    if (child.type === 'text' || child.type === 'sprite' || child.type === 'image' || child.type === 'rect' && child.centered) {
+    if (child.type === 'sprite' || child.type === 'image' || child.type === 'rect' && child.centered) {
       x -= w / 2;
       y -= h / 2;
     }
@@ -98,9 +100,8 @@ var Display = (function() {
         ctx.fill();
         ctx.closePath();
       } else if (child.type === 'text') {
-        ctx.font = unit * 2 + 'px Roboto, sans-serif';
         ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
+        ctx.textBaseline = 'hanging';
         ctx.fillText(child.content, cx, cy, w, h);
       } else if (child.type === 'sprite') {
         var image = sprites[child.id][color || 'colored'];
@@ -714,74 +715,93 @@ function removeFromArray(array, item) {
 function main() {
   var ball;
   var player;
-  var Game = {
-    entities: null,
-    paddles: null,
-    balls: null,
-    blocks: null,
-    bumpers: null,
-    paused: false,
-    stuttering: false,
-    resetting: false,
-    resetTimer: null,
-    start: function() {
-      this.entities = [];
+  var Game = (function() {
+    var drawnScore = 0;
+    var Game = {
+      score: 0,
+      entities: null,
+      paddles: null,
+      balls: null,
+      blocks: null,
+      bumpers: null,
+      paused: false,
+      stuttering: false,
+      resetting: false,
+      resetTimer: null,
+      start: function() {
+        Game.entities = [];
 
-      this.paddles = [];
-      this.balls = [];
-      this.blocks = [];
-      this.bumpers = [];
+        Game.paddles = [];
+        Game.balls = [];
+        Game.blocks = [];
+        Game.bumpers = [];
 
-      player = createPaddle();
-      ball = createBall();
-      for (var y = 0; y < 8; y++) {
-        for (var x = 0; x < 6; x++) {
-          createBlock([4 / 2 + 4 * (x + 1), 1 / 2 + 1 * (y + 1) + 3], Math.floor(y / 2));
+        Game.score = 0;
+
+        player = createPaddle();
+        ball = createBall();
+        createBlocks([Display.size[0] / 2, Display.size[1] / 4], [8, 4]);
+        createBumper([Display.size[0] - 7, 16]);
+        Game.scoreText = foreground.text('00000000', 'left', 'white')([0, 0]);
+        Game.updateScore();
+      },
+      stop: function() {
+        var i = Game.entities.length;
+        while (i--) {
+          Game.entities[i].delete();
         }
-      }
-      createBumper([Display.size[0] - 7, 16]);
-    },
-    stop: function() {
-      var i = this.entities.length;
-      while (i--) {
-        this.entities[i].delete();
-      }
-      this.entities = [];
-    },
-    stutter: function() {
-      this.stuttering = true;
-    },
-    reset: function(delay) {
-      if (!this.resetting) {
-        this.resetting = true;
-        this.resetTimer = (delay || 0) * 60;
-      }
-    },
-    loop: function() {
-      if (!Game.paused) {
-        if (!Game.stuttering) {
-          if (Game.resetting) {
-            if (!Game.resetTimer--) {
-              Game.resetting = false;
-              Game.stop();
-              Game.start();
+        Game.entities = [];
+      },
+      addScore: function(score) {
+        Game.score += score;
+      },
+      updateScore: function(score) {
+        score = Math.round(score || Game.score).toString();
+        while (score.length < 8) {
+          score = '0' + score;
+        }
+        Game.scoreText.content = score;
+      },
+      stutter: function() {
+        Game.stuttering = true;
+      },
+      reset: function(delay) {
+        if (!Game.resetting) {
+          Game.resetting = true;
+          Game.resetTimer = (delay || 0) * 60;
+        }
+      },
+      loop: function() {
+        if (!Game.paused) {
+          if (!Game.stuttering) {
+            if (Game.resetting) {
+              if (!Game.resetTimer--) {
+                Game.resetting = false;
+                Game.stop();
+                Game.start();
+              }
             }
+            var i = 0, imax = Game.entities.length, entity;
+            while (i < imax) {
+              entity = Game.entities[i++];
+              entity && entity.update();
+            }
+            if (drawnScore !== Game.score) {
+              drawnScore += (Game.score - drawnScore) / 8;
+              Game.updateScore(drawnScore);
+            }
+            foreground.update();
+          } else {
+            Game.stuttering = false;
           }
-          var i = 0, imax = Game.entities.length, entity;
-          while (i < imax) {
-            entity = Game.entities[i++];
-            entity && entity.update();
-          }
-          foreground.update();
-        } else {
-          Game.stuttering = false;
+        }
+        if (Input.tapped.KeyP) {
+          Game.paused = !Game.paused;
         }
       }
-      if (Input.tapped.KeyP) {
-        Game.paused = !Game.paused;
-      }
-    }
-  };
+    };
+    return Game
+  }());
 
   var Entity = {
     sprite: null,
@@ -832,6 +852,30 @@ function main() {
     return impact
   }
 
+  function createRay(pos, target, offset) {
+    var size = 0.2;
+    var ray = Object.assign(Object.create(Entity), {
+      size: [size, size],
+      sprite: foreground.circle(size, 'dodgerblue'),
+      spd: -0.1,
+      frc: 0.1,
+      target: target,
+      update: function() {
+        var distanceVector = Vector.subtracted(Vector.added(target.pos, offset), this.pos);
+        var distanceScalar = Vector.magnitude(distanceVector);
+        this.dir = Vector.getNormal(distanceVector);
+        this.spd += 0.005;
+        if (distanceScalar < size) {
+          this.delete();
+        }
+        Entity.update.call(this);
+      }
+    });
+    pos = pos || [0, 0];
+    ray.create(pos);
+    return ray
+  }
+
   function createStardust(pos, dir) {
     var size = 0.1;
     var stardust = Object.assign(Object.create(Entity), {
@@ -846,7 +890,7 @@ function main() {
         this.vel = Vector.scaled(this.dir, this.spd * 10);
       },
       update: function() {
-        if (this.lifetime > 20 - Random.choose()) {
+        if (this.lifetime > 10 - Random.choose()) {
           this.sprite.visible = !this.sprite.visible;
         }
         if (this.lifetime > 30) {
@@ -891,12 +935,17 @@ function main() {
           paddle = Game.paddles[i];
           if (this.pos[1] > paddle.pos[1] - paddle.size[1]) {
             var distance = Vector.magnitude(Vector.subtracted(this.pos, paddle.pos));
-            if (distance < paddle.size[1] / 2) {
+            if (distance < paddle.size[1] / 2 + this.size[1] / 4) {
               var j = Random.get(10) + 10;
               while (j--) {
                 var dust = createStardust([Random.get() * this.size[0] / 2 + this.pos[0] - this.size[0] / 4, this.pos[1]], Vector.fromDegrees(Random.get() * 360));
                 dust.spd = Random.get(10) * 0.001 + 0.005;
               }
+              // var j = 3
+              // while (j--) {
+              //   createRay(Vector.added(this.pos, [j - 1, 0]), paddle, [0, -paddle.size[1] / 2 - ball.size[1] / 2])
+              // }
+              Game.score += 1000;
               this.delete();
               foreground.delete(this.trail);
             }
@@ -914,7 +963,7 @@ function main() {
   }
 
   function createBlock(pos, index) {
-    var size = [4, 1];
+    var size = [3, 1];
     var block = Object.assign(Object.create(Entity), {
       size: size,
       sprite: foreground.sprite('block', size),
@@ -939,6 +988,22 @@ function main() {
     block.create(pos);
     block.sprite.index = index || 0;
     return block
+  }
+
+  function createBlocks(origin, dimensions) {
+    var bw = 3;
+    var bh = 1;
+    var x = origin[0];
+    var y = origin[1];
+    var w = dimensions[0];
+    var h = dimensions[1];
+    var l = x - (w * bw) / 2;
+    var t = y - (h * bh) / 2;
+    for (var i = 0; i < h; i++) {
+      for (var j = 0; j < w; j++) {
+        createBlock([l + bw * (j + 0.5), t + bh * (i + 0.5)], i);
+      }
+    }
   }
 
   function createBall(pos) {
@@ -1011,6 +1076,7 @@ function main() {
               createPowerup([x, y]);
             }
             createImpact([x, y]);
+            Game.addScore(100 * (4 - block.sprite.index));
             block.delete();
             Display.shake();
             this.stutter();
@@ -1060,6 +1126,15 @@ function main() {
               this.delete();
               ball = createBall();
             }
+            var normal = Vector.getNormal(Vector.inverted(this.vel)), angle = Vector.toDegrees(normal);
+            var newNormal, newAngle, dust;
+            var i = 4;
+            while (i--) {
+              newAngle = angle + Random.get(30) - 15;
+              newNormal = Vector.fromDegrees(newAngle);
+              dust = createStardust(this.pos, newNormal);
+              dust.speed = Random.get(100) * 0.00001;
+            }
           } else {
             this.pos = Vector.added(player.pos, [0, -player.size[1] / 2 - this.size[1] / 2]);
             if (Input.tapped.MouseLeft) {
@@ -1087,8 +1162,8 @@ function main() {
       size: [size, size],
       sprite: foreground.image('mars.gif', size),
       dir: Vector.LEFT,
-      spd: 0.0025,
-      frc: 0.9999,
+      spd: 0.001,
+      frc: 0.991,
       create: function(pos) {
         Entity.create.call(this, pos);
         Game.bumpers.push(this);
@@ -1099,8 +1174,11 @@ function main() {
       },
       update: function() {
         Entity.update.call(this);
-        if ((Display.size[0] / 2 - this.pos[0]) * this.dir[0] < 0) {
-          this.dir[0] *= -1;
+        if (this.dir[0] < 0 && this.pos[0] < Display.size[0] * 0.25) {
+          this.dir[0] = 1;
+        }
+        if (this.dir[0] > 0 && this.pos[0] > Display.size[0] * 0.75) {
+          this.dir[0] = -1;
         }
       }
     });

@@ -31,6 +31,7 @@ export default (function() {
   }
   function getDrawBox(child) {
     var unit = child.parent.rect.width / scale
+    var ctx = child.parent.context
     var x, y, w, h
 
     x = child.pos [0] * unit
@@ -39,11 +40,12 @@ export default (function() {
       w = child.size[0] * unit
       h = child.size[1] * unit
     } else if (child.type === 'text') {
+      ctx.font = unit * 2 + 'px VT323, Roboto, sans-serif'
       w = ctx.measureText(child.content).width
       h = unit * 2
     }
 
-    if (child.type === 'text' || child.type === 'sprite' || child.type === 'image' || child.type === 'rect' && child.centered) {
+    if (child.type === 'sprite' || child.type === 'image' || child.type === 'rect' && child.centered) {
       x -= w / 2
       y -= h / 2
     }
@@ -98,9 +100,8 @@ export default (function() {
         ctx.fill()
         ctx.closePath()
       } else if (child.type === 'text') {
-        ctx.font = unit * 2 + 'px Roboto, sans-serif'
         ctx.textAlign = 'left'
-        ctx.textBaseline = 'top'
+        ctx.textBaseline = 'hanging'
         ctx.fillText(child.content, cx, cy, w, h)
       } else if (child.type === 'sprite') {
         var image = sprites[child.id][color || 'colored']
