@@ -1,0 +1,23 @@
+{
+  "name": "breakout",
+  "version": "0.1.0",
+  "description": "Funky HTML5 + Canvas breakout clone.",
+  "author": "Brandon Semilla (https://github.com/grandonbroseph)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/grandonbroseph/breakout.git"
+  },
+  "scripts": {
+    "postinstall": "npm start",
+    "start": "npm-run-all --parallel serve watch",
+    "serve": "browser-sync start --no-notify --no-ui --server --serveStatic docs --files \"docs/*.+(html|css|js)\" --port 8080",
+    "watch": "rollup -w -i docs/scripts/main.js -o docs/main.js"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "browser-sync": "^2.17.5",
+    "npm-run-all": "^3.1.1",
+    "rollup": "^0.36.3",
+    "rollup-watch": "^2.5.0"
+  }
+}

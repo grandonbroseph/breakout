@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="8" viewBox="0 0 128 8">
+  <g id="purple">
+    <rect    fill="#208" x="0" y="0" width="32" height="8"/>
+    <polygon fill="#85b" points="0,0 32,0 0,8"/>
+    <rect    fill="#529" x="1" y="1" width="30" height="6"/>
+  </g>
+  <g id="red" transform="translate(32)">
+    <rect    fill="#713" x="0" y="0" width="32" height="8"/>
+    <polygon fill="#e36" points="0,0 32,0 0,8"/>
+    <rect    fill="#b13" x="1" y="1" width="30" height="6"/>
+  </g>
+  <g id="yellow" transform="translate(64)">
+    <rect    fill="#852" x="0" y="0" width="32" height="8"/>
+    <polygon fill="#fd5" points="0,0 32,0 0,8"/>
+    <rect    fill="#ea1" x="1" y="1" width="30" height="6"/>
+  </g>
+  <g id="green" transform="translate(96)">
+    <rect    fill="#257" x="0" y="0" width="32" height="8"/>
+    <polygon fill="#3ca" points="0,0 32,0 0,8"/>
+    <rect    fill="#286" x="1" y="1" width="30" height="6"/>
+  </g>
+</svg>

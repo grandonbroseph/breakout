@@ -1,0 +1,42 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background: black;
+  overflow: hidden;
+}
+
+#wrap {
+  cursor: none;
+  -webkit-user-select: none;
+  position: relative;
+  background: black;
+  width: 100vw;
+  margin: auto;
+}
+
+#wrap::before {
+  content: '';
+  display: block;
+  padding: 75% 0 0;
+}
+
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+@media (min-aspect-ratio: 4 / 3) {
+  #wrap {
+    width: calc(100vh * 4 / 3);
+    height: 100vh;
+  }
+}
