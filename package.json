@@ -1,6 +1,6 @@
 {
   "name": "breakout",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Funky HTML5 + Canvas breakout clone.",
   "author": "Brandon Semilla (https://github.com/grandonbroseph)",
   "repository": {

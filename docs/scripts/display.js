@@ -62,7 +62,7 @@ export default (function() {
     }
   }
   function drawChild(child) {
-    if (!flashing) {
+    if (!flashing && child.visible) {
       var parent  = child.parent
       var unit    = parent.rect.width / scale
       var ctx     = parent.context
@@ -80,7 +80,7 @@ export default (function() {
       color = child.color
       if (typeof color === 'object' && color !== null) {
         if (typeof w !== 'undefined' && typeof h !== 'undefined') {
-          gradient = ctx.createLinearGradient(0, 0, 0, h)
+          gradient = ctx.createLinearGradient(x, y, x, y + h)
           color.some(function(color, index) {
             gradient.addColorStop(index, color)
           })
@@ -185,7 +185,8 @@ export default (function() {
             color:    color,
             pos:      pos   || [0, 0],
             centered: !!centered,
-            parent:   canvas
+            parent:   canvas,
+            visible:  true
           }
           canvas.children.push(data)
           drawChild(data)
@@ -207,7 +208,8 @@ export default (function() {
             radius: radius,
             color:  color,
             pos:    pos   || [0, 0],
-            parent: canvas
+            parent: canvas,
+            visible:  true
           }
           canvas.children.push(data)
           drawChild(data)
@@ -225,7 +227,8 @@ export default (function() {
             align:   align || 'left',
             color:   color,
             pos:     pos   || [0, 0],
-            parent:  canvas
+            parent:  canvas,
+            visible:  true
           }
           canvas.children.push(data)
           drawChild(data)
@@ -250,7 +253,8 @@ export default (function() {
             size:   size,
             color:  null,
             pos:    pos ? [pos[0], pos[1]] : [0, 0],
-            parent: canvas
+            parent: canvas,
+            visible:  true
           }
           canvas.children.push(data)
           drawChild(data)
@@ -274,7 +278,8 @@ export default (function() {
             index:  0,
             size:   size,
             pos:    pos ? [pos[0], pos[1]] : [0, 0],
-            parent: canvas
+            parent: canvas,
+            visible:  true
           }
           canvas.children.push(data)
           drawChild(data)
@@ -413,7 +418,7 @@ export default (function() {
       })
     },
     shake: function() {
-      var magnitude = 0.5
+      var magnitude = 0.25
       var direction = 1
       var duration  = 0.25 * 60
       var position  = 0
